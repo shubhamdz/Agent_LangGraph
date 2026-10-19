@@ -8,7 +8,7 @@ A structured, hands-on repository documenting my journey learning **LangGraph** 
 
 | # | Topic / Pattern | Notebook / Code | Status | Description |
 |---|-----------------|-----------------|:------:|-------------|
-| 1 | **Sequential Workflow** | [`bmi_workflow.ipynb`](file:///Sequential_Workflow/bmi_workflow.ipynb) | ✅ Completed | Basic linear graph: State definition, calculation node, classification node, and compilation |
+| 1 | **Sequential Workflow** | [`bmi_workflow.ipynb`](file:///Sequential_Workflow/bmi_workflow.ipynb)<br>[`simple_llm_workflow.ipynb`](file:///Sequential_Workflow/simple_llm_workflow.ipynb)<br>[`prompt_chaining.ipynb`](file:///Sequential_Workflow/prompt_chaining.ipynb) | ✅ Completed | Linear graphs: Pure Python logic, single-node LLM calls, and multi-step LLM prompt chaining (Outline ➔ Blog generation) |
 | 2 | **Conditional Edges** | `TBD` | ⏳ Upcoming | Dynamic branching based on state inspection |
 | 3 | **Cycles & Loops (Agentic loops)** | `TBD` | ⏳ Upcoming | Iterative problem solving with reflection and loop counters |
 | 4 | **Tool Calling & External APIs** | `TBD` | ⏳ Upcoming | Integrating LLMs with custom and prebuilt tools |
@@ -22,24 +22,24 @@ A structured, hands-on repository documenting my journey learning **LangGraph** 
 
 ```text
 Agent_LangGraph/
-├── .env.example              # Environment variables template
-├── .gitignore                # Git ignore configuration
-├── requirements.txt          # Python dependencies
-├── README.md                 # Project documentation & learning tracker
-└── Sequential_Workflow/      # Module 1: Sequential graphs
-    └── bmi_workflow.ipynb    # BMI calculation & category labeling graph
+├── .env.example                  # Environment variables template
+├── .gitignore                    # Git ignore configuration
+├── requirements.txt              # Python dependencies
+├── README.md                     # Project documentation & learning tracker
+└── Sequential_Workflow/          # Module 1: Sequential graphs
+    ├── bmi_workflow.ipynb        # BMI calculation & category labeling graph
+    ├── simple_llm_workflow.ipynb # Single-node LLM query graph
+    └── prompt_chaining.ipynb     # Multi-step LLM prompt chaining graph (Outline -> Blog)
 ```
 
 ---
 
 ## 🔍 Module 1: Sequential Workflow
 
-A sequential workflow runs nodes in a fixed, linear order (`START` ➔ `Node A` ➔ `Node B` ➔ `END`).
+Sequential workflows execute nodes in a fixed, linear order (`START` ➔ `Node A` ➔ `Node B` ➔ ... ➔ `END`).
 
-### Example: BMI Calculator Graph
-Located in: [`Sequential_Workflow/bmi_workflow.ipynb`](file:///Sequential_Workflow/bmi_workflow.ipynb)
-
-#### 1. Graph Flow
+### 1. BMI Calculator (`bmi_workflow.ipynb`)
+Demonstrates state definitions and pure Python transformations across nodes.
 ```mermaid
 graph LR
     START([START]) --> calculate_bmi[calculate_bmi]
@@ -47,11 +47,22 @@ graph LR
     label_bmi --> END([END])
 ```
 
-#### 2. Key Concepts Demonstrated
-- **Graph State**: Defining typed schema with `typing.TypedDict` (`weight_kg`, `height_m`, `bmi`, `category`).
-- **Nodes**: Pure Python functions that accept the current state and return state updates.
-- **Edges**: Connecting nodes via `graph.add_edge()` using `START` and `END` sentinel nodes.
-- **Compilation & Execution**: Compiling with `graph.compile()` and invoking via `workflow.invoke()`.
+### 2. Simple LLM Workflow (`simple_llm_workflow.ipynb`)
+Demonstrates integrating an LLM (via `ChatGroq`) directly within a LangGraph node.
+```mermaid
+graph LR
+    START([START]) --> llm_response[llm_response]
+    llm_response --> END([END])
+```
+
+### 3. Prompt Chaining (`prompt_chaining.ipynb`)
+Demonstrates sequential LLM pipeline chaining where each node transforms and enriches state for the next LLM call (Blog Title ➔ Outline Generator ➔ Content Generator).
+```mermaid
+graph LR
+    START([START]) --> create_outline[create_outline]
+    create_outline --> create_blog[create_blog]
+    create_blog --> END([END])
+```
 
 ---
 
