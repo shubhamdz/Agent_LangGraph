@@ -9,7 +9,7 @@ A structured, hands-on repository documenting my journey learning **LangGraph** 
 | # | Topic / Pattern | Notebook / Code | Status | Description |
 |---|-----------------|-----------------|:------:|-------------|
 | 1 | **Sequential Workflow** | [`bmi_workflow.ipynb`](file:///Sequential_Workflow/bmi_workflow.ipynb)<br>[`simple_llm_workflow.ipynb`](file:///Sequential_Workflow/simple_llm_workflow.ipynb)<br>[`prompt_chaining.ipynb`](file:///Sequential_Workflow/prompt_chaining.ipynb) | ✅ Completed | Linear graphs: Pure Python logic, single-node LLM calls, and multi-step LLM prompt chaining (Outline ➔ Blog generation) |
-| 2 | **Parallel Workflow** | [`batsman_workflow.ipynb`](file:///Parallel_Workflow/batsman_workflow.ipynb) | ✅ Completed | Fan-out / Fan-in parallel graph: Multiple independent calculations running concurrently and merging into a summary node |
+| 2 | **Parallel Workflow** | [`batsman_workflow.ipynb`](file:///Parallel_Workflow/batsman_workflow.ipynb)<br>[`upsc_essay_workflow.ipynb`](file:///Parallel_Workflow/upsc_essay_workflow.ipynb) | ✅ Completed | Fan-out / Fan-in parallel graphs: Independent computations and multi-aspect LLM evaluation with state reducers (`operator.add`) |
 | 3 | **Conditional Edges** | `TBD` | ⏳ Upcoming | Dynamic branching based on state inspection |
 | 4 | **Cycles & Loops (Agentic loops)** | `TBD` | ⏳ Upcoming | Iterative problem solving with reflection and loop counters |
 | 5 | **Tool Calling & External APIs** | `TBD` | ⏳ Upcoming | Integrating LLMs with custom and prebuilt tools |
@@ -32,7 +32,8 @@ Agent_LangGraph/
 │   ├── simple_llm_workflow.ipynb # Single-node LLM query graph
 │   └── prompt_chaining.ipynb     # Multi-step LLM prompt chaining graph (Outline -> Blog)
 └── Parallel_Workflow/            # Module 2: Parallel graphs (Fan-out / Fan-in)
-    └── batsman_workflow.ipynb    # Cricket batsman performance metrics graph
+    ├── batsman_workflow.ipynb    # Cricket batsman performance metrics graph
+    └── upsc_essay_workflow.ipynb # Multi-criteria parallel LLM essay evaluation graph
 ```
 
 ---
@@ -73,10 +74,10 @@ graph LR
 
 Parallel workflows execute multiple independent nodes concurrently from a single predecessor (**Fan-Out**) and aggregate their outputs into a single downstream node (**Fan-In**).
 
-### Batsman Performance Analyzer (`batsman_workflow.ipynb`)
+### 1. Batsman Performance Analyzer (`batsman_workflow.ipynb`)
 Demonstrates parallel execution of independent metrics calculations and automatic state merging.
 
-#### 1. Graph Flow
+#### Graph Flow
 ```mermaid
 graph TD
     START([START]) --> calculate_strike_rate[calculate_strike_rate]
@@ -88,10 +89,30 @@ graph TD
     summary --> END([END])
 ```
 
-#### 2. Key Concepts Demonstrated
+#### Key Concepts Demonstrated
 - **Fan-Out**: Multiple edges leaving `START` trigger simultaneous execution of independent metric calculators.
 - **State Partitioning**: Each parallel node computes a distinct key in `BatsmanState` (`strike_rate`, `balls_per_boundary`, `boundary_percent`) without conflicting writes.
 - **Fan-In (Barrier Synchronization)**: The `summary` node automatically waits until all parallel nodes complete before executing and synthesizing the final output.
+
+### 2. UPSC Essay Evaluator (`upsc_essay_workflow.ipynb`)
+Demonstrates parallel LLM evaluations with Pydantic structured output and **State Reducers** (`operator.add`) for handling concurrent list updates.
+
+#### Graph Flow
+```mermaid
+graph TD
+    START([START]) --> evaluate_language[evaluate_language]
+    START --> evaluate_analysis[evaluate_analysis]
+    START --> evaluate_thought[evaluate_thought]
+    evaluate_language --> final_evaluation[final_evaluation]
+    evaluate_analysis --> final_evaluation
+    evaluate_thought --> final_evaluation
+    final_evaluation --> END([END])
+```
+
+#### Key Concepts Demonstrated
+- **Parallel LLM Evaluations**: Runs 3 distinct evaluators (Language, Depth of Analysis, Clarity of Thought) concurrently using `ChatGroq` with `with_structured_output(EvaluationSchema)`.
+- **State Reducers (`Annotated[list, operator.add]`)**: Solves concurrent write conflicts when parallel nodes append their individual scores into a shared list.
+- **Consolidated Synthesis**: `final_evaluation` calculates average scores and generates a comprehensive overall review.
 
 ---
 
