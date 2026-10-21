@@ -10,7 +10,7 @@ A structured, hands-on repository documenting my journey learning **LangGraph** 
 |---|-----------------|-----------------|:------:|-------------|
 | 1 | **Sequential Workflow** | [`bmi_workflow.ipynb`](file:///Sequential_Workflow/bmi_workflow.ipynb)<br>[`simple_llm_workflow.ipynb`](file:///Sequential_Workflow/simple_llm_workflow.ipynb)<br>[`prompt_chaining.ipynb`](file:///Sequential_Workflow/prompt_chaining.ipynb) | ✅ Completed | Linear graphs: Pure Python logic, single-node LLM calls, and multi-step LLM prompt chaining (Outline ➔ Blog generation) |
 | 2 | **Parallel Workflow** | [`batsman_workflow.ipynb`](file:///Parallel_Workflow/batsman_workflow.ipynb)<br>[`upsc_essay_workflow.ipynb`](file:///Parallel_Workflow/upsc_essay_workflow.ipynb) | ✅ Completed | Fan-out / Fan-in parallel graphs: Independent computations and multi-aspect LLM evaluation with state reducers (`operator.add`) |
-| 3 | **Conditional Workflow** | [`quadratic_workflow.ipynb`](file:///Conditional_Workflow/quadratic_workflow.ipynb) | ✅ Completed | Dynamic branching via `add_conditional_edges` and `Literal` router functions (Quadratic equation root solver) |
+| 3 | **Conditional Workflow** | [`quadratic_workflow.ipynb`](file:///Conditional_Workflow/quadratic_workflow.ipynb)<br>[`review_reply_workflow.ipynb`](file:///Conditional_Workflow/review_reply_workflow.ipynb) | ✅ Completed | Dynamic branching via `add_conditional_edges`: Deterministic math routing and LLM sentiment-driven support response generation |
 | 4 | **Cycles & Loops (Agentic loops)** | `TBD` | ⏳ Upcoming | Iterative problem solving with reflection and loop counters |
 | 5 | **Tool Calling & External APIs** | `TBD` | ⏳ Upcoming | Integrating LLMs with custom and prebuilt tools |
 | 6 | **Memory & Checkpointing** | `TBD` | ⏳ Upcoming | State persistence, thread-level checkpointing, and time travel |
@@ -35,7 +35,8 @@ Agent_LangGraph/
 │   ├── batsman_workflow.ipynb    # Cricket batsman performance metrics graph
 │   └── upsc_essay_workflow.ipynb # Multi-criteria parallel LLM essay evaluation graph
 └── Conditional_Workflow/         # Module 3: Conditional branching graphs
-    └── quadratic_workflow.ipynb  # Quadratic equation root solver with dynamic routing
+    ├── quadratic_workflow.ipynb  # Quadratic equation root solver with dynamic routing
+    └── review_reply_workflow.ipynb # Customer review sentiment analysis & diagnosis router
 ```
 
 ---
@@ -122,7 +123,7 @@ graph TD
 
 Conditional workflows implement dynamic branching logic using conditional edges (`add_conditional_edges`). The graph inspects the current state at runtime and routes execution to specific downstream nodes based on condition functions returning string identifiers / `Literal` types.
 
-### Quadratic Equation Solver (`quadratic_workflow.ipynb`)
+### 1. Quadratic Equation Solver (`quadratic_workflow.ipynb`)
 Demonstrates mathematical condition checking based on the discriminant ($b^2 - 4ac$) to route execution to appropriate root-finding nodes.
 
 #### Graph Flow
@@ -143,6 +144,26 @@ graph TD
 - **Router Function (`check_condition`)**: Uses typing `Literal['no_real_root', 'real_root', 'repeated_root']` to map state evaluation cleanly to downstream target node names.
 - **Conditional Edges**: Attached via `graph.add_conditional_edges('calculate_discriminant', check_condition)`.
 - **Terminal Edge Convergence**: Each distinct branching path routes cleanly to `END`.
+
+### 2. Customer Review Reply & Diagnosis Workflow (`review_reply_workflow.ipynb`)
+Demonstrates LLM-driven conditional routing where customer reviews are evaluated for sentiment, triggering either an immediate response or a multi-step diagnostic sub-branch.
+
+#### Graph Flow
+```mermaid
+graph TD
+    START([START]) --> find_sentiment[find_sentiment]
+    find_sentiment -.-> check_sentiment{check_sentiment}
+    check_sentiment -- "positive" --> positive_response[positive_response]
+    check_sentiment -- "negative" --> run_diagnosis[run_diagnosis]
+    positive_response --> END([END])
+    run_diagnosis --> negative_response[negative_response]
+    negative_response --> END
+```
+
+#### Key Concepts Demonstrated
+- **Structured LLM Classification**: Classifies review sentiment with `ChatGroq` using Pydantic `SentimentSchema` (`Literal['positive', 'negative']`).
+- **Dynamic Branch Selection**: `check_sentiment` routes positive reviews directly to `positive_response` and negative reviews to `run_diagnosis`.
+- **Multi-Step Conditional Pipelines**: Negative feedback flows through a 2-step resolution chain: detailed diagnostic extraction (issue type, tone, urgency) followed by an empathetic, tailored response.
 
 ---
 
