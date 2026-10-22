@@ -12,8 +12,8 @@ A structured, hands-on repository documenting my journey learning **LangGraph** 
 | 2 | **Parallel Workflow** | [`batsman_workflow.ipynb`](file:///Parallel_Workflow/batsman_workflow.ipynb)<br>[`upsc_essay_workflow.ipynb`](file:///Parallel_Workflow/upsc_essay_workflow.ipynb) | ✅ Completed | Fan-out / Fan-in parallel graphs: Independent computations and multi-aspect LLM evaluation with state reducers (`operator.add`) |
 | 3 | **Conditional Workflow** | [`quadratic_workflow.ipynb`](file:///Conditional_Workflow/quadratic_workflow.ipynb)<br>[`review_reply_workflow.ipynb`](file:///Conditional_Workflow/review_reply_workflow.ipynb) | ✅ Completed | Dynamic branching via `add_conditional_edges`: Deterministic math routing and LLM sentiment-driven support response generation |
 | 4 | **Iterative Workflow (Loops & Cycles)** | [`X_post_generator.ipynb`](file:///Iterative_Workflow/X_post_generator.ipynb) | ✅ Completed | Agentic reflection loops: Generate ➔ Critique ➔ Optimize cycle with max iteration guardrails & state reducers |
-| 5 | **Tool Calling & External APIs** | `TBD` | ⏳ Upcoming | Integrating LLMs with custom and prebuilt tools |
-| 6 | **Memory & Checkpointing** | `TBD` | ⏳ Upcoming | State persistence, thread-level checkpointing, and time travel |
+| 5 | **Conversational Workflow (Memory & Persistence)** | [`basic_chatbot.ipynb`](file:///Conversational_Workflow/basic_chatbot.ipynb) | ✅ Completed | Stateful chat agent with `MemorySaver` checkpointer, message history reducer (`add_messages`), and multi-turn thread session management |
+| 6 | **Tool Calling & External APIs** | `TBD` | ⏳ Upcoming | Integrating LLMs with custom and prebuilt tools |
 | 7 | **Human-in-the-Loop (HITL)** | `TBD` | ⏳ Upcoming | Interrupts, approvals, and human state editing |
 | 8 | **Multi-Agent Systems** | `TBD` | ⏳ Upcoming | Supervisor, hierarchical, and collaborative agent workflows |
 
@@ -37,8 +37,10 @@ Agent_LangGraph/
 ├── Conditional_Workflow/         # Module 3: Conditional branching graphs
 │   ├── quadratic_workflow.ipynb  # Quadratic equation root solver with dynamic routing
 │   └── review_reply_workflow.ipynb # Customer review sentiment analysis & diagnosis router
-└── Iterative_Workflow/           # Module 4: Agentic loops & reflection cycles
-    └── X_post_generator.ipynb    # Viral tweet generator with critique and self-correction loop
+├── Iterative_Workflow/           # Module 4: Agentic loops & reflection cycles
+│   └── X_post_generator.ipynb    # Viral tweet generator with critique and self-correction loop
+└── Conversational_Workflow/      # Module 5: Conversational agents & persistence
+    └── basic_chatbot.ipynb       # Stateful multi-turn chatbot with memory checkpointing
 ```
 
 ---
@@ -192,6 +194,27 @@ graph TD
 - **Loop Termination Guardrails**: `route_evaluation` prevents infinite loops by checking approval status OR safety cutoff (`iterations >= max_iterations`).
 - **State History with Reducers**: `tweet_history: Annotated[list[str], operator.add]` and `feedback_history: Annotated[list[str], operator.add]` track the full evolution of drafts and critique feedback across iterations.
 - **Specialized Multi-LLM Personas**: Leverages distinct models and prompts for generation (`openai/gpt-oss-20b`), critique (`openai/gpt-oss-120b` with structured output schema), and refinement (`qwen/qwen3.8-27b`).
+
+---
+
+## 💬 Module 5: Conversational Workflow (Memory & Persistence)
+
+Conversational workflows introduce stateful dialog agents with memory persistence. By leveraging LangGraph's checkpointer mechanism (`MemorySaver`), the graph persists state across invocations, enabling multi-turn conversations grouped by a unique session `thread_id`.
+
+### Basic Stateful Chatbot (`basic_chatbot.ipynb`)
+Demonstrates an interactive multi-turn conversational agent with thread-scoped memory and message history management.
+
+#### Graph Flow
+```mermaid
+graph LR
+    START([START]) --> chat_node[chat_node]
+    chat_node --> END([END])
+```
+
+#### Key Concepts Demonstrated
+- **Message Reducer (`add_messages`)**: `messages: Annotated[list[BaseMessage], add_messages]` automatically appends incoming human and AI messages to the existing conversation context without manual concatenation.
+- **Checkpointer & Thread Management**: Compiled with `MemorySaver()` checkpointer. Passing `config = {'configurable': {'thread_id': '1'}}` isolates conversation states per user or thread.
+- **Context Retention**: Maintains conversational continuity across independent invocations within a persistent interactive loop.
 
 ---
 
