@@ -11,7 +11,7 @@ A structured, hands-on repository documenting my journey learning **LangGraph** 
 | 1 | **Sequential Workflow** | [`bmi_workflow.ipynb`](file:///Sequential_Workflow/bmi_workflow.ipynb)<br>[`simple_llm_workflow.ipynb`](file:///Sequential_Workflow/simple_llm_workflow.ipynb)<br>[`prompt_chaining.ipynb`](file:///Sequential_Workflow/prompt_chaining.ipynb) | ✅ Completed | Linear graphs: Pure Python logic, single-node LLM calls, and multi-step LLM prompt chaining (Outline ➔ Blog generation) |
 | 2 | **Parallel Workflow** | [`batsman_workflow.ipynb`](file:///Parallel_Workflow/batsman_workflow.ipynb)<br>[`upsc_essay_workflow.ipynb`](file:///Parallel_Workflow/upsc_essay_workflow.ipynb) | ✅ Completed | Fan-out / Fan-in parallel graphs: Independent computations and multi-aspect LLM evaluation with state reducers (`operator.add`) |
 | 3 | **Conditional Workflow** | [`quadratic_workflow.ipynb`](file:///Conditional_Workflow/quadratic_workflow.ipynb)<br>[`review_reply_workflow.ipynb`](file:///Conditional_Workflow/review_reply_workflow.ipynb) | ✅ Completed | Dynamic branching via `add_conditional_edges`: Deterministic math routing and LLM sentiment-driven support response generation |
-| 4 | **Cycles & Loops (Agentic loops)** | `TBD` | ⏳ Upcoming | Iterative problem solving with reflection and loop counters |
+| 4 | **Iterative Workflow (Loops & Cycles)** | [`X_post_generator.ipynb`](file:///Iterative_Workflow/X_post_generator.ipynb) | ✅ Completed | Agentic reflection loops: Generate ➔ Critique ➔ Optimize cycle with max iteration guardrails & state reducers |
 | 5 | **Tool Calling & External APIs** | `TBD` | ⏳ Upcoming | Integrating LLMs with custom and prebuilt tools |
 | 6 | **Memory & Checkpointing** | `TBD` | ⏳ Upcoming | State persistence, thread-level checkpointing, and time travel |
 | 7 | **Human-in-the-Loop (HITL)** | `TBD` | ⏳ Upcoming | Interrupts, approvals, and human state editing |
@@ -34,9 +34,11 @@ Agent_LangGraph/
 ├── Parallel_Workflow/            # Module 2: Parallel graphs (Fan-out / Fan-in)
 │   ├── batsman_workflow.ipynb    # Cricket batsman performance metrics graph
 │   └── upsc_essay_workflow.ipynb # Multi-criteria parallel LLM essay evaluation graph
-└── Conditional_Workflow/         # Module 3: Conditional branching graphs
-    ├── quadratic_workflow.ipynb  # Quadratic equation root solver with dynamic routing
-    └── review_reply_workflow.ipynb # Customer review sentiment analysis & diagnosis router
+├── Conditional_Workflow/         # Module 3: Conditional branching graphs
+│   ├── quadratic_workflow.ipynb  # Quadratic equation root solver with dynamic routing
+│   └── review_reply_workflow.ipynb # Customer review sentiment analysis & diagnosis router
+└── Iterative_Workflow/           # Module 4: Agentic loops & reflection cycles
+    └── X_post_generator.ipynb    # Viral tweet generator with critique and self-correction loop
 ```
 
 ---
@@ -164,6 +166,32 @@ graph TD
 - **Structured LLM Classification**: Classifies review sentiment with `ChatGroq` using Pydantic `SentimentSchema` (`Literal['positive', 'negative']`).
 - **Dynamic Branch Selection**: `check_sentiment` routes positive reviews directly to `positive_response` and negative reviews to `run_diagnosis`.
 - **Multi-Step Conditional Pipelines**: Negative feedback flows through a 2-step resolution chain: detailed diagnostic extraction (issue type, tone, urgency) followed by an empathetic, tailored response.
+
+---
+
+## 🔁 Module 4: Iterative Workflow (Cycles & Loops)
+
+Iterative workflows introduce cyclic graphs (agentic loops) where an agent generates output, another node critiques or evaluates it, and an optimizer refines it in a loop until a quality threshold or maximum iteration limit is reached (**Generate-Evaluate-Optimize pattern**).
+
+### Viral Tweet Generator & Optimizer (`X_post_generator.ipynb`)
+Demonstrates an iterative self-correction loop featuring a generator, a strict critic with structured output, and a virality optimizer.
+
+#### Graph Flow
+```mermaid
+graph TD
+    START([START]) --> generate[generate]
+    generate --> evaluate[evaluate]
+    evaluate -.-> route_evaluation{route_evaluation}
+    route_evaluation -- "approved OR iterations >= max" --> END([END])
+    route_evaluation -- "needs_improvement" --> optimize[optimize]
+    optimize --> evaluate
+```
+
+#### Key Concepts Demonstrated
+- **Agentic Reflection Cycles**: The cyclic edge `optimize -> evaluate` creates an iterative refinement loop that mimics human draft revision.
+- **Loop Termination Guardrails**: `route_evaluation` prevents infinite loops by checking approval status OR safety cutoff (`iterations >= max_iterations`).
+- **State History with Reducers**: `tweet_history: Annotated[list[str], operator.add]` and `feedback_history: Annotated[list[str], operator.add]` track the full evolution of drafts and critique feedback across iterations.
+- **Specialized Multi-LLM Personas**: Leverages distinct models and prompts for generation (`openai/gpt-oss-20b`), critique (`openai/gpt-oss-120b` with structured output schema), and refinement (`qwen/qwen3.8-27b`).
 
 ---
 
