@@ -13,9 +13,10 @@ A structured, hands-on repository documenting my journey learning **LangGraph** 
 | 3 | **Conditional Workflow** | [`quadratic_workflow.ipynb`](file:///Conditional_Workflow/quadratic_workflow.ipynb)<br>[`review_reply_workflow.ipynb`](file:///Conditional_Workflow/review_reply_workflow.ipynb) | ✅ Completed | Dynamic branching via `add_conditional_edges`: Deterministic math routing and LLM sentiment-driven support response generation |
 | 4 | **Iterative Workflow (Loops & Cycles)** | [`X_post_generator.ipynb`](file:///Iterative_Workflow/X_post_generator.ipynb) | ✅ Completed | Agentic reflection loops: Generate ➔ Critique ➔ Optimize cycle with max iteration guardrails & state reducers |
 | 5 | **Conversational Workflow (Memory & Persistence)** | [`basic_chatbot.ipynb`](file:///Conversational_Workflow/basic_chatbot.ipynb) | ✅ Completed | Stateful chat agent with `MemorySaver` checkpointer, message history reducer (`add_messages`), and multi-turn thread session management |
-| 6 | **Tool Calling & External APIs** | `TBD` | ⏳ Upcoming | Integrating LLMs with custom and prebuilt tools |
-| 7 | **Human-in-the-Loop (HITL)** | `TBD` | ⏳ Upcoming | Interrupts, approvals, and human state editing |
-| 8 | **Multi-Agent Systems** | `TBD` | ⏳ Upcoming | Supervisor, hierarchical, and collaborative agent workflows |
+| 6 | **State Persistence & Fault Tolerance** | [`persistence.ipynb`](file:///Persistence/persistence.ipynb)<br>[`fault_tolerance.ipynb`](file:///Persistence/fault_tolerance.ipynb) | ✅ Completed | Checkpointing (`InMemorySaver`), state history inspection, time travel, and crash recovery/resumption |
+| 7 | **Tool Calling & External APIs** | `TBD` | ⏳ Upcoming | Integrating LLMs with custom and prebuilt tools |
+| 8 | **Human-in-the-Loop (HITL)** | `TBD` | ⏳ Upcoming | Interrupts, approvals, and human state editing |
+| 9 | **Multi-Agent Systems** | `TBD` | ⏳ Upcoming | Supervisor, hierarchical, and collaborative agent workflows |
 
 ---
 
@@ -39,8 +40,11 @@ Agent_LangGraph/
 │   └── review_reply_workflow.ipynb # Customer review sentiment analysis & diagnosis router
 ├── Iterative_Workflow/           # Module 4: Agentic loops & reflection cycles
 │   └── X_post_generator.ipynb    # Viral tweet generator with critique and self-correction loop
-└── Conversational_Workflow/      # Module 5: Conversational agents & persistence
-    └── basic_chatbot.ipynb       # Stateful multi-turn chatbot with memory checkpointing
+├── Conversational_Workflow/      # Module 5: Conversational agents & persistence
+│   └── basic_chatbot.ipynb       # Stateful multi-turn chatbot with memory checkpointing
+└── Persistence/                  # Module 6: State persistence, time travel & fault tolerance
+    ├── persistence.ipynb         # Checkpoint snapshots, state history & time travel
+    └── fault_tolerance.ipynb     # Simulating interrupts, crash recovery & resume execution
 ```
 
 ---
@@ -215,6 +219,48 @@ graph LR
 - **Message Reducer (`add_messages`)**: `messages: Annotated[list[BaseMessage], add_messages]` automatically appends incoming human and AI messages to the existing conversation context without manual concatenation.
 - **Checkpointer & Thread Management**: Compiled with `MemorySaver()` checkpointer. Passing `config = {'configurable': {'thread_id': '1'}}` isolates conversation states per user or thread.
 - **Context Retention**: Maintains conversational continuity across independent invocations within a persistent interactive loop.
+
+---
+
+## 💾 Module 6: Persistence, Time Travel & Fault Tolerance
+
+LangGraph's checkpointing system captures complete snapshots of the graph state at every step. This unlocks crucial production capabilities:
+1. **State Inspection & History**: Querying previous states via `get_state()` and `get_state_history()`.
+2. **Time Travel**: Rewinding to any historical checkpoint and resuming or forking execution.
+3. **Fault Tolerance & Crash Recovery**: Resuming interrupted or failed runs without repeating already-completed nodes.
+
+### 1. State Inspection & Time Travel (`persistence.ipynb`)
+Demonstrates checkpointing a multi-step joke-and-explanation workflow, inspecting state history, and branching from past checkpoints.
+
+#### Graph Flow
+```mermaid
+graph LR
+    START([START]) --> generate_joke[generate_joke]
+    generate_joke --> generate_explanation[generate_explanation]
+    generate_explanation --> END([END])
+```
+
+#### Key Concepts Demonstrated
+- **Checkpointer Setup**: Compiling with `InMemorySaver()`.
+- **State Snapshot Retrieval**: Using `workflow.get_state(config)` to inspect the current state snapshot (`values`, `next`, `checkpoint_id`, `metadata`).
+- **History Traversal**: Using `workflow.get_state_history(config)` to view the chronological evolution of snapshots across execution steps.
+- **Time Travel & Forking**: Resuming from an earlier `checkpoint_id` to branch execution or re-run downstream nodes with modified inputs.
+
+### 2. Fault Tolerance & Crash Recovery (`fault_tolerance.ipynb`)
+Demonstrates simulated mid-execution failure (e.g., timeout / keyboard interrupt) and resuming seamlessly from the last committed checkpoint.
+
+#### Graph Flow
+```mermaid
+graph LR
+    START([START]) --> step_1[step_1: Succeeded]
+    step_1 --> step_2[step_2: Simulates Crash]
+    step_2 --> step_3[step_3: Succeeded]
+    step_3 --> END([END])
+```
+
+#### Key Concepts Demonstrated
+- **Durable Checkpoint Boundaries**: State is saved after each node executes. If `step_2` crashes or gets interrupted, `step_1`'s state is preserved.
+- **Zero-Input Resumption**: Invoking `graph.invoke(None, config={"configurable": {"thread_id": "thread-1"}})` automatically detects the incomplete step and resumes from the last valid checkpoint without re-executing `step_1`.
 
 ---
 
