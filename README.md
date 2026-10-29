@@ -14,9 +14,10 @@ A structured, hands-on repository documenting my journey learning **LangGraph** 
 | 4 | **Iterative Workflow (Loops & Cycles)** | [`X_post_generator.ipynb`](file:///Iterative_Workflow/X_post_generator.ipynb) | ✅ Completed | Agentic reflection loops: Generate ➔ Critique ➔ Optimize cycle with max iteration guardrails & state reducers |
 | 5 | **Conversational Workflow (Memory & Persistence)** | [`basic_chatbot.ipynb`](file:///Conversational_Workflow/basic_chatbot.ipynb) | ✅ Completed | Stateful chat agent with `MemorySaver` checkpointer, message history reducer (`add_messages`), and multi-turn thread session management |
 | 6 | **State Persistence & Fault Tolerance** | [`persistence.ipynb`](file:///Persistence/persistence.ipynb)<br>[`fault_tolerance.ipynb`](file:///Persistence/fault_tolerance.ipynb) | ✅ Completed | Checkpointing (`InMemorySaver`), state history inspection, time travel, and crash recovery/resumption |
-| 7 | **Tool Calling & External APIs** | `TBD` | ⏳ Upcoming | Integrating LLMs with custom and prebuilt tools |
-| 8 | **Human-in-the-Loop (HITL)** | `TBD` | ⏳ Upcoming | Interrupts, approvals, and human state editing |
-| 9 | **Multi-Agent Systems** | `TBD` | ⏳ Upcoming | Supervisor, hierarchical, and collaborative agent workflows |
+| 7 | **Chatbot (Production Deployment)** | [`langgraph_backend.py`](file:///chatbot/langgraph_backend.py)<br>[`streamlit_frontend.py`](file:///chatbot/streamlit_frontend.py) | ✅ Completed | Full-stack chatbot app: LangGraph `MemorySaver` backend + Streamlit UI with real-time session-based conversation history |
+| 8 | **Tool Calling & External APIs** | `TBD` | ⏳ Upcoming | Integrating LLMs with custom and prebuilt tools |
+| 9 | **Human-in-the-Loop (HITL)** | `TBD` | ⏳ Upcoming | Interrupts, approvals, and human state editing |
+| 10 | **Multi-Agent Systems** | `TBD` | ⏳ Upcoming | Supervisor, hierarchical, and collaborative agent workflows |
 
 ---
 
@@ -42,9 +43,12 @@ Agent_LangGraph/
 │   └── X_post_generator.ipynb    # Viral tweet generator with critique and self-correction loop
 ├── Conversational_Workflow/      # Module 5: Conversational agents & persistence
 │   └── basic_chatbot.ipynb       # Stateful multi-turn chatbot with memory checkpointing
-└── Persistence/                  # Module 6: State persistence, time travel & fault tolerance
-    ├── persistence.ipynb         # Checkpoint snapshots, state history & time travel
-    └── fault_tolerance.ipynb     # Simulating interrupts, crash recovery & resume execution
+├── Persistence/                  # Module 6: State persistence, time travel & fault tolerance
+│   ├── persistence.ipynb         # Checkpoint snapshots, state history & time travel
+│   └── fault_tolerance.ipynb     # Simulating interrupts, crash recovery & resume execution
+└── chatbot/                      # Module 7: Production chatbot app (LangGraph + Streamlit)
+    ├── langgraph_backend.py      # LangGraph StateGraph with MemorySaver checkpointer
+    └── streamlit_frontend.py     # Streamlit UI with session-based conversation history
 ```
 
 ---
@@ -261,6 +265,42 @@ graph LR
 #### Key Concepts Demonstrated
 - **Durable Checkpoint Boundaries**: State is saved after each node executes. If `step_2` crashes or gets interrupted, `step_1`'s state is preserved.
 - **Zero-Input Resumption**: Invoking `graph.invoke(None, config={"configurable": {"thread_id": "thread-1"}})` automatically detects the incomplete step and resumes from the last valid checkpoint without re-executing `step_1`.
+
+---
+
+## 🤖 Module 7: Chatbot — Production Deployment (LangGraph + Streamlit)
+
+This module bridges the gap between notebook experiments and a **real deployable application**. It splits the LangGraph logic into a clean backend/frontend architecture, powered by Streamlit for an interactive chat UI.
+
+### Architecture
+
+```text
+┌─────────────────────────────────┐     ┌─────────────────────────────────────┐
+│  streamlit_frontend.py (UI)     │────▶│  langgraph_backend.py (Brain)       │
+│  - Streamlit chat interface     │     │  - ChatGroq LLM (gpt-oss-120b)      │
+│  - Session message history      │◀────│  - StateGraph with MemorySaver       │
+│  - Thread-scoped config         │     │  - add_messages reducer              │
+└─────────────────────────────────┘     └─────────────────────────────────────┘
+```
+
+#### Graph Flow
+```mermaid
+graph LR
+    START([START]) --> chat_node[chat_node]
+    chat_node --> END([END])
+```
+
+#### Key Concepts Demonstrated
+- **Backend / Frontend Separation**: LangGraph logic is fully encapsulated in `langgraph_backend.py` and imported as a module by the Streamlit frontend.
+- **Thread-Scoped Persistence**: `CONFIG = {'configurable': {'thread_id': 'thread-1'}}` is passed on every `chatbot.invoke()` call, ensuring `MemorySaver` routes messages to the correct conversation thread.
+- **Streamlit Session State**: `st.session_state['message_history']` maintains the displayed chat history across Streamlit reruns, keeping UI and LangGraph state in sync.
+- **Real-Time Chat UI**: Uses `st.chat_input` and `st.chat_message` for a native, streaming-friendly chat experience.
+
+#### How to Run
+```bash
+cd chatbot
+streamlit run streamlit_frontend.py
+```
 
 ---
 
