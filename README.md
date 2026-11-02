@@ -15,9 +15,10 @@ A structured, hands-on repository documenting my journey learning **LangGraph** 
 | 5 | **Conversational Workflow (Memory & Persistence)** | [`basic_chatbot.ipynb`](file:///Conversational_Workflow/basic_chatbot.ipynb) | ✅ Completed | Stateful chat agent with `MemorySaver` checkpointer, message history reducer (`add_messages`), and multi-turn thread session management |
 | 6 | **State Persistence & Fault Tolerance** | [`persistence.ipynb`](file:///Persistence/persistence.ipynb)<br>[`fault_tolerance.ipynb`](file:///Persistence/fault_tolerance.ipynb) | ✅ Completed | Checkpointing (`InMemorySaver`), state history inspection, time travel, and crash recovery/resumption |
 | 7 | **Chatbot (Production Deployment)** | [`langgraph_backend.py`](file:///chatbot/langgraph_backend.py)<br>[`streamlit_frontend.py`](file:///chatbot/streamlit_frontend.py) | ✅ Completed | Full-stack chatbot app: LangGraph `MemorySaver` backend + Streamlit UI with real-time session-based conversation history |
-| 8 | **Tool Calling & External APIs** | `TBD` | ⏳ Upcoming | Integrating LLMs with custom and prebuilt tools |
-| 9 | **Human-in-the-Loop (HITL)** | `TBD` | ⏳ Upcoming | Interrupts, approvals, and human state editing |
-| 10 | **Multi-Agent Systems** | `TBD` | ⏳ Upcoming | Supervisor, hierarchical, and collaborative agent workflows |
+| 8 | **LangSmith Observability** | [`1_simple_llm_call.py`](file:///langsmith/1_simple_llm_call.py)<br>[`2_sequential_chain.py`](file:///langsmith/2_sequential_chain.py)<br>[`3_rag_v1.py`](file:///langsmith/3_rag_v1.py) → `v4`<br>[`4_agent.py`](file:///langsmith/4_agent.py)<br>[`5_langgraph.py`](file:///langsmith/5_langgraph.py) | ✅ Completed | End-to-end LangSmith tracing: LLM calls, sequential chains, RAG pipelines (v1→v4), ReAct agents, and LangGraph workflows with run names, tags & metadata |
+| 9 | **Tool Calling & External APIs** | `TBD` | ⏳ Upcoming | Integrating LLMs with custom and prebuilt tools |
+| 10 | **Human-in-the-Loop (HITL)** | `TBD` | ⏳ Upcoming | Interrupts, approvals, and human state editing |
+| 11 | **Multi-Agent Systems** | `TBD` | ⏳ Upcoming | Supervisor, hierarchical, and collaborative agent workflows |
 
 ---
 
@@ -46,9 +47,22 @@ Agent_LangGraph/
 ├── Persistence/                  # Module 6: State persistence, time travel & fault tolerance
 │   ├── persistence.ipynb         # Checkpoint snapshots, state history & time travel
 │   └── fault_tolerance.ipynb     # Simulating interrupts, crash recovery & resume execution
-└── chatbot/                      # Module 7: Production chatbot app (LangGraph + Streamlit)
-    ├── langgraph_backend.py      # LangGraph StateGraph with MemorySaver checkpointer
-    └── streamlit_frontend.py     # Streamlit UI with session-based conversation history
+├── chatbot/                      # Module 7: Production chatbot app (LangGraph + Streamlit)
+│   ├── langgraph_backend.py      # LangGraph StateGraph with MemorySaver checkpointer
+│   ├── streamlit_frontend.py     # Streamlit UI with session-based conversation history
+│   ├── streamlit_frontend_streaming.py  # Streaming version using chatbot.stream()
+│   ├── streamlit_frontend_threading.py  # Multi-thread conversation management
+│   ├── langgraph_database_backend.py    # SQLite-backed persistent checkpointer
+│   └── streamlit_frontend_database.py  # Full DB-backed UI with chat history & clear
+└── langsmith/                    # Module 8: LangSmith observability & tracing
+    ├── 1_simple_llm_call.py      # Basic LLM chain tracing
+    ├── 2_sequential_chain.py     # Sequential chain with run names, tags & metadata
+    ├── 3_rag_v1.py               # RAG pipeline tracing (basic)
+    ├── 3_rag_v2.py               # RAG with @traceable decorator per function
+    ├── 3_rag_v3.py               # RAG with parent/child nested trace spans
+    ├── 3_rag_v4.py               # RAG v4: Gemini embeddings + FAISS cache + full tracing
+    ├── 4_agent.py                # ReAct agent with DuckDuckGo + weather tool tracing
+    └── 5_langgraph.py            # LangGraph parallel essay evaluator with LangSmith
 ```
 
 ---
@@ -300,6 +314,50 @@ graph LR
 ```bash
 cd chatbot
 streamlit run streamlit_frontend.py
+```
+
+---
+
+## 🔭 Module 8: LangSmith Observability & Tracing
+
+LangSmith provides end-to-end visibility into every LLM call, chain step, retrieval, and agent action. This module progressively applies LangSmith tracing across different application types — from a single LLM call to a full parallel LangGraph workflow.
+
+### Tracing Progression
+
+| File | Pattern | LangSmith Feature |
+|------|---------|-------------------|
+| `1_simple_llm_call.py` | Single LLM chain | Auto-tracing via `LANGCHAIN_TRACING_V2=true` |
+| `2_sequential_chain.py` | Sequential chain | `run_name`, `tags`, `metadata` on `.invoke()` |
+| `3_rag_v1.py` → `v3` | RAG pipeline | Progressive: auto-trace → `@traceable` per node → nested parent/child spans |
+| `3_rag_v4.py` | RAG + FAISS cache | Gemini embeddings, index caching, full nested span hierarchy |
+| `4_agent.py` | ReAct Agent | Tool-call tracing, DuckDuckGo search + weather API |
+| `5_langgraph.py` | LangGraph parallel graph | LangGraph node-level tracing with structured output schema |
+
+### Key Concepts Demonstrated
+
+- **Auto-Tracing**: Setting `LANGCHAIN_TRACING_V2=true` and `LANGCHAIN_API_KEY` in `.env` automatically traces all LangChain/LangGraph calls.
+- **`@traceable` Decorator**: Wraps plain Python functions (e.g., PDF loading, vectorstore building) as named spans in the LangSmith trace tree.
+- **Run Metadata**: Passing `config={'run_name': ..., 'tags': [...], 'metadata': {...}}` to `.invoke()` enriches traces with searchable labels.
+- **Nested Spans (Parent/Child)**: Calling `@traceable` functions from within another `@traceable` function creates hierarchical trace trees for full pipeline visibility.
+- **Per-Project Isolation**: Setting `os.environ['LANGCHAIN_PROJECT']` routes traces to named LangSmith projects for clean separation between experiments.
+- **Agent Tool Tracing**: Every tool call (search, weather API) made by the ReAct agent is captured as a child span under the parent agent run.
+
+### RAG v4 Architecture (most advanced)
+```mermaid
+graph TD
+    START([CLI Input]) --> setup_pipeline_and_query
+    setup_pipeline_and_query --> load_or_build_index{Cache Hit?}
+    load_or_build_index -- Yes --> load_index_run[load_index_run]
+    load_or_build_index -- No --> build_index_run[build_index_run]
+    build_index_run --> load_pdf[load_pdf]
+    build_index_run --> split_documents[split_documents]
+    build_index_run --> build_vectorstore["build_vectorstore\n(Gemini Embeddings + FAISS)"]
+    load_index_run --> retriever[FAISS Retriever]
+    build_vectorstore --> retriever
+    retriever --> parallel["RunnableParallel\n(context + question)"]
+    parallel --> prompt[ChatPromptTemplate]
+    prompt --> llm["ChatGroq\n(gpt-oss-120b)"]
+    llm --> END([Answer])
 ```
 
 ---
