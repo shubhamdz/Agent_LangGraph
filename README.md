@@ -16,7 +16,7 @@ A structured, hands-on repository documenting my journey learning **LangGraph** 
 | 6 | **State Persistence & Fault Tolerance** | [`persistence.ipynb`](file:///Persistence/persistence.ipynb)<br>[`fault_tolerance.ipynb`](file:///Persistence/fault_tolerance.ipynb) | ✅ Completed | Checkpointing (`InMemorySaver`), state history inspection, time travel, and crash recovery/resumption |
 | 7 | **Chatbot (Production Deployment)** | [`langgraph_backend.py`](file:///chatbot/langgraph_backend.py)<br>[`streamlit_frontend.py`](file:///chatbot/streamlit_frontend.py) | ✅ Completed | Full-stack chatbot app: LangGraph `MemorySaver` backend + Streamlit UI with real-time session-based conversation history |
 | 8 | **LangSmith Observability** | [`1_simple_llm_call.py`](file:///langsmith/1_simple_llm_call.py)<br>[`2_sequential_chain.py`](file:///langsmith/2_sequential_chain.py)<br>[`3_rag_v1.py`](file:///langsmith/3_rag_v1.py) → `v4`<br>[`4_agent.py`](file:///langsmith/4_agent.py)<br>[`5_langgraph.py`](file:///langsmith/5_langgraph.py) | ✅ Completed | End-to-end LangSmith tracing: LLM calls, sequential chains, RAG pipelines (v1→v4), ReAct agents, and LangGraph workflows with run names, tags & metadata |
-| 9 | **Tool Calling & External APIs** | `TBD` | ⏳ Upcoming | Integrating LLMs with custom and prebuilt tools |
+| 9 | **Tool Calling & External APIs** | [`tools.ipynb`](file:///tools/tools.ipynb)<br>[`langgraph_tool_backend.py`](file:///chatbot/langgraph_tool_backend.py)<br>[`streamlit_frontend_tool.py`](file:///chatbot/streamlit_frontend_tool.py) | ✅ Completed | LLM-powered tool-calling agent: DuckDuckGo search, stock price API, and arithmetic calculator with live Streamlit tool-status UI |
 | 10 | **Human-in-the-Loop (HITL)** | `TBD` | ⏳ Upcoming | Interrupts, approvals, and human state editing |
 | 11 | **Multi-Agent Systems** | `TBD` | ⏳ Upcoming | Supervisor, hierarchical, and collaborative agent workflows |
 
@@ -48,12 +48,16 @@ Agent_LangGraph/
 │   ├── persistence.ipynb         # Checkpoint snapshots, state history & time travel
 │   └── fault_tolerance.ipynb     # Simulating interrupts, crash recovery & resume execution
 ├── chatbot/                      # Module 7: Production chatbot app (LangGraph + Streamlit)
-│   ├── langgraph_backend.py      # LangGraph StateGraph with MemorySaver checkpointer
-│   ├── streamlit_frontend.py     # Streamlit UI with session-based conversation history
+│   ├── langgraph_backend.py             # LangGraph StateGraph with MemorySaver checkpointer
+│   ├── streamlit_frontend.py            # Basic Streamlit UI with session message history
 │   ├── streamlit_frontend_streaming.py  # Streaming version using chatbot.stream()
-│   ├── streamlit_frontend_threading.py  # Multi-thread conversation management
-│   ├── langgraph_database_backend.py    # SQLite-backed persistent checkpointer
-│   └── streamlit_frontend_database.py  # Full DB-backed UI with chat history & clear
+│   ├── streamlit_frontend_threading.py  # Multi-thread conversation management (in-memory)
+│   ├── langgraph_database_backend.py    # SQLite-backed persistent checkpointer + CRUD
+│   ├── streamlit_frontend_database.py   # Full DB-backed UI with history, titles & clear
+│   ├── langgraph_tool_backend.py        # Tool-calling agent (search, stock, calculator)
+│   └── streamlit_frontend_tool.py       # Streamlit UI with live tool-status spinner
+├── tools/                        # Module 9: Tool calling notebook experiments
+│   └── tools.ipynb                   # Tool binding, custom tools & ToolNode exploration
 └── langsmith/                    # Module 8: LangSmith observability & tracing
     ├── 1_simple_llm_call.py      # Basic LLM chain tracing
     ├── 2_sequential_chain.py     # Sequential chain with run names, tags & metadata
@@ -314,6 +318,45 @@ graph LR
 ```bash
 cd chatbot
 streamlit run streamlit_frontend.py
+```
+
+---
+
+## 🛠️ Module 9: Tool Calling & External APIs
+
+Tool calling lets an LLM decide at runtime which tools to invoke, passing structured arguments and feeding results back into the conversation. This module builds a fully functional tool-calling agent using LangGraph's `ToolNode` and `tools_condition` with a Streamlit frontend that shows live tool activity.
+
+### Tools Implemented
+
+| Tool | Description |
+|------|-------------|
+| `DuckDuckGoSearchRun` | Web search for real-time information |
+| `get_stock_price` | Fetches live stock quotes via Alpha Vantage API |
+| `calculator` | Arithmetic operations: add, sub, mul, div |
+
+### Graph Flow
+
+```mermaid
+graph TD
+    START([START]) --> chat_node[chat_node\nllm_with_tools]
+    chat_node -.- tools_condition{tools_condition}
+    tools_condition -- tool call --> tools[ToolNode\nrun tools]
+    tools_condition -- no tool call --> END([END])
+    tools --> chat_node
+```
+
+#### Key Concepts Demonstrated
+- **`bind_tools()`**: Attaches tool schemas to the LLM so it can emit structured tool-call requests.
+- **`ToolNode`**: Prebuilt LangGraph node that automatically executes whichever tools the LLM requested.
+- **`tools_condition`**: Built-in conditional edge that routes to `ToolNode` when there's a pending tool call, or to `END` when the LLM responds directly.
+- **Agentic Loop**: The `tools → chat_node` back-edge lets the LLM reason over tool results and optionally call more tools before producing a final answer.
+- **Live Tool Status UI**: `st.status()` in `streamlit_frontend_tool.py` renders a real-time spinner labelled with the active tool name, collapsing to ✅ when done.
+- **SQLite Persistence**: Inherits the full thread management and conversation persistence from the database backend.
+
+#### How to Run
+```bash
+cd "chatbot "
+streamlit run streamlit_frontend_tool.py
 ```
 
 ---
