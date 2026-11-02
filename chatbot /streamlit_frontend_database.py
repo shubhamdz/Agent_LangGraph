@@ -10,6 +10,8 @@ from langgraph_database_backend import (
 )
 from langchain_core.messages import HumanMessage
 import uuid
+import os
+os.environ['LANGCHAIN_PROJECT'] = 'Chatbot'
 
 #**************************************** Utilitie*****************************************
 
@@ -35,7 +37,7 @@ def load_conversation(thread_id):
     # Check if messages key exists in state values, return empty list if not
     return state.values.get('messages', [])
 
-def generate_chat_title(user_message, assistant_message):
+def generate_chat_title(user_message, assistant_message, thread_id):
 
     prompt = f"""
     Generate a short, meaningful title for this conversation.
@@ -49,7 +51,15 @@ def generate_chat_title(user_message, assistant_message):
     - Do not use quotation marks.
     """
 
-    response = model.invoke(prompt)
+    response = model.invoke(
+        prompt,
+        config={
+            "metadata": {
+                "thread_id": thread_id
+            },
+            "run_name": "generate_chat_title"
+        }
+    )
 
     return response.content.strip().strip('"')
 
@@ -89,6 +99,7 @@ for thread_id in st.session_state['thread_id_list'][::-1]:
                 temp_mess.append({'role': 'assistant', 'content': msg.content})
 
         st.session_state['message_history'] = temp_mess
+        st.rerun()
 
 # loading the conversation history
 for message in st.session_state['message_history']:
@@ -100,7 +111,12 @@ for message in st.session_state['message_history']:
 
 user_input = st.chat_input('Type here')
 # st.session_state -> dict -> 
-CONFIG = {'configurable': {'thread_id': st.session_state['thread_id']}}
+CONFIG = {'configurable': {'thread_id': st.session_state['thread_id']},
+            'metadata':{
+                "thread_id": st.session_state['thread_id']
+                },
+            'run_name':'chat_turn'
+            }
 
 
 if user_input:
@@ -124,7 +140,7 @@ if user_input:
     st.session_state['message_history'].append({'role': 'assistant', 'content': ai_message})
 
     if st.session_state['thread_names'].get(thread_id) == "New Chat":
-        chat_name = generate_chat_title(user_input, ai_message)
+        chat_name = generate_chat_title(user_input, ai_message,thread_id)
         st.session_state['thread_names'][thread_id] = chat_name
         update_thread_name(thread_id, chat_name)
         st.rerun()
